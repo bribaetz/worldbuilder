@@ -631,3 +631,32 @@ export function generateBodesLawOrbits(
   return orbits
 }
 
+/**
+ * Check if a planet is habitable
+ * Criteria: rocky planet, within habitable zone, and surface gravity <= 1.3g
+ */
+export function isHabitable(
+  planetType: string,
+  semiMajorAxis: number,
+  surfaceGravity: number,
+  habitableZoneMin: number,
+  habitableZoneMax: number
+): boolean {
+  // Must be rocky
+  if (planetType !== 'rock') {
+    return false
+  }
+
+  // Must be within habitable zone
+  if (semiMajorAxis < habitableZoneMin || semiMajorAxis > habitableZoneMax) {
+    return false
+  }
+
+  // Surface gravity must be <= 1.3g
+  if (surfaceGravity > 1.3) {
+    return false
+  }
+
+  return true
+}
+

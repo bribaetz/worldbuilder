@@ -276,8 +276,8 @@
 
             <div class="planets-section">
               <h2>Planets</h2>
-              <PlanetForm systemId={selectedSystem.id} />
-              <PlanetList systemId={selectedSystem.id} planets={selectedSystem.planets} starMass={selectedSystem.star.mass} />
+              <PlanetForm systemId={selectedSystem.id} habitableZoneMin={selectedSystem.star.habitableZoneMin || 0} habitableZoneMax={selectedSystem.star.habitableZoneMax || 0} />
+              <PlanetList systemId={selectedSystem.id} planets={selectedSystem.planets} starMass={selectedSystem.star.mass} habitableZoneMin={selectedSystem.star.habitableZoneMin || 0} habitableZoneMax={selectedSystem.star.habitableZoneMax || 0} />
               <BodesLawCalculator starMass={selectedSystem.star.mass} />
             </div>
           </div>

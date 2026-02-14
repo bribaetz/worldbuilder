@@ -5,11 +5,14 @@
     calculatePlanetRadius,
     calculatePlanetDensity,
     calculateSurfaceGravity,
-    calculatePlanetEscapeVelocity
+    calculatePlanetEscapeVelocity,
+    isHabitable
   } from '$lib/utils/astronomy'
   import type { Planet } from '../types/star'
 
   export let systemId: string
+  export let habitableZoneMin: number = 0
+  export let habitableZoneMax: number = 0
 
   let planetName = ''
   let planetMass = 1.0
@@ -21,6 +24,16 @@
   let rotationPeriodHours = 24
   let inclination = 0
   let axialTilt = 0
+
+  let surfaceGravity = 0
+
+  $: {
+    // Recalculate surface gravity for habitability check
+    const radius = calculatePlanetRadius(planetMass, planetType)
+    surfaceGravity = calculateSurfaceGravity(planetMass, radius)
+  }
+
+  $: isHabitableIndicator = isHabitable(planetType, semiMajorAxis, surfaceGravity, habitableZoneMin, habitableZoneMax)
 
   function handleSave() {
     if (!planetName.trim()) {
@@ -151,6 +164,17 @@
     </select>
   </div>
 
+  {#if planetType === 'rock'}
+    <div class="habitability-indicator">
+      <span class="label">Habitability:</span>
+      {#if isHabitableIndicator}
+        <span class="habitable">✓ Habitable</span>
+      {:else}
+        <span class="not-habitable">✗ Not Habitable</span>
+      {/if}
+    </div>
+  {/if}
+
   <div class="form-group">
     <label for="semiMajorAxis">Semi-major Axis (AU)</label>
     <input
@@ -266,6 +290,32 @@
   .button-group {
     display: flex;
     gap: 10px;
+  }
+
+  .habitability-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    margin: 15px 0;
+  }
+
+  .habitability-indicator .label {
+    font-weight: 600;
+    color: #a0a0a0;
+  }
+
+  .habitable {
+    color: #4ade80;
+    font-weight: 600;
+  }
+
+  .not-habitable {
+    color: #ef4444;
+    font-weight: 600;
   }
 
   .btn-save,

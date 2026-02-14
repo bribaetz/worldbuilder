@@ -11,13 +11,16 @@
     gravityToMs2,
     calculatePeriapsis,
     calculateApoapsis,
-    calculateOrbitalPeriodDays
+    calculateOrbitalPeriodDays,
+    isHabitable
   } from '$lib/utils/astronomy'
   import type { Planet } from '../types/star'
 
   export let systemId: string
   export let planets: Planet[]
   export let starMass: number
+  export let habitableZoneMin: number = 0
+  export let habitableZoneMax: number = 0
 
   let showRadiusKm = false
   let showGravityMs2 = false
@@ -253,6 +256,14 @@
                     {(planet.type || 'rock').charAt(0).toUpperCase() + (planet.type || 'rock').slice(1)}
                   </span>
                 </div>
+                {#if planet.type === 'rock'}
+                  <div class="detail-row">
+                    <span class="label">Habitable</span>
+                    <span class="value" class:habitable={isHabitable(planet.type, planet.semiMajorAxis, planet.surfaceGravity, habitableZoneMin, habitableZoneMax)} class:not-habitable={!isHabitable(planet.type, planet.semiMajorAxis, planet.surfaceGravity, habitableZoneMin, habitableZoneMax)}>
+                      {isHabitable(planet.type, planet.semiMajorAxis, planet.surfaceGravity, habitableZoneMin, habitableZoneMax) ? '✓ Yes' : '✗ No'}
+                    </span>
+                  </div>
+                {/if}
                 <div class="detail-row">
                   <span class="label">Mass</span>
                   <span class="value">{planet.mass.toFixed(2)} M⊕</span>
@@ -619,5 +630,15 @@
   .type-badge.gas {
     background: rgba(168, 162, 142, 0.3);
     color: #d4af85;
+  }
+
+  .value.habitable {
+    color: #4ade80;
+    font-weight: 600;
+  }
+
+  .value.not-habitable {
+    color: #ef4444;
+    font-weight: 600;
   }
 </style>
