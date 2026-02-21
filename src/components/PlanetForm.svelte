@@ -24,6 +24,11 @@
   let rotationPeriodHours = 24
   let inclination = 0
   let axialTilt = 0
+  let albedo = 0.3
+  let atmosphericPressure = 1.0
+  let oxygenPercentage = 21
+  let argonPercentage = 0.9
+  let co2Percentage = 0.04
 
   let surfaceGravity = 0
 
@@ -51,7 +56,17 @@
       return
     }
 
+    // Validate atmospheric composition
+    const otherGasesTotal = oxygenPercentage + argonPercentage + co2Percentage
+    if (otherGasesTotal > 100) {
+      alert('Oxygen + Argon + CO2 cannot exceed 100%. Current total: ' + otherGasesTotal.toFixed(2) + '%')
+      return
+    }
+
     const planetAge = parseAgeInput(planetAgeInput)
+
+    // Calculate nitrogen as remainder
+    const nitrogenPercentage = 100 - (oxygenPercentage + argonPercentage + co2Percentage)
 
     // Calculate derived properties
     const radius = calculatePlanetRadius(planetMass, planetType)
@@ -76,6 +91,12 @@
       rotationPeriodHours,
       inclination,
       axialTilt,
+      albedo,
+      atmosphericPressure,
+      oxygenPercentage,
+      nitrogenPercentage,
+      argonPercentage,
+      co2Percentage,
       createdAt: Date.now()
     }
 
@@ -90,6 +111,11 @@
     rotationPeriodHours = 24
     inclination = 0
     axialTilt = 0
+    albedo = 0.3
+    atmosphericPressure = 1.0
+    oxygenPercentage = 21
+    argonPercentage = 0.9
+    co2Percentage = 0.04
   }
 
   function handleCancel() {
@@ -103,6 +129,11 @@
     rotationPeriodHours = 24
     inclination = 0
     axialTilt = 0
+    albedo = 0.3
+    atmosphericPressure = 1.0
+    oxygenPercentage = 21
+    argonPercentage = 0.9
+    co2Percentage = 0.04
   }
 </script>
 
@@ -232,6 +263,74 @@
       max="180"
       step="0.1"
       bind:value={axialTilt}
+    />
+  </div>
+
+  <div class="form-group">
+    <label for="albedo">Albedo (0-1)</label>
+    <input
+      id="albedo"
+      type="number"
+      min="0"
+      max="1"
+      step="0.01"
+      bind:value={albedo}
+    />
+  </div>
+
+  <div class="form-group">
+    <label for="atmosphericPressure">Atmospheric Pressure (bars)</label>
+    <input
+      id="atmosphericPressure"
+      type="number"
+      min="0"
+      max="1000"
+      step="0.1"
+      bind:value={atmosphericPressure}
+    />
+  </div>
+
+  <div class="form-group">    <label for="oxygenPercentage">Oxygen (%)</label>
+    <input
+      id="oxygenPercentage"
+      type="number"
+      min="0"
+      max="100"
+      step="0.1"
+      bind:value={oxygenPercentage}
+    />
+  </div>
+
+  <div class="form-group">    <label for="nitrogenPercentage">Nitrogen (%) - Calculated</label>
+    <input
+      id="nitrogenPercentage"
+      type="number"
+      readonly
+      value={100 - (oxygenPercentage + argonPercentage + co2Percentage)}
+    />
+  </div>
+
+  <div class="form-group">
+    <label for="argonPercentage">Argon (%)</label>
+    <input
+      id="argonPercentage"
+      type="number"
+      min="0"
+      max="100"
+      step="0.1"
+      bind:value={argonPercentage}
+    />
+  </div>
+
+  <div class="form-group">
+    <label for="co2Percentage">Carbon Dioxide (%)</label>
+    <input
+      id="co2Percentage"
+      type="number"
+      min="0"
+      max="100"
+      step="0.01"
+      bind:value={co2Percentage}
     />
   </div>
 

@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store'
-import type { System, Star, Planet } from '$lib/../types/star'
+import type { System, Star, Planet, DebrisBelt } from '$lib/../types/star'
 
 export const systems = writable<System[]>([])
 
@@ -80,6 +80,47 @@ export function deletePlanet(systemId: string, planetId: string): void {
     const updated = s.map((system) =>
       system.id === systemId
         ? { ...system, planets: system.planets.filter((p) => p.id !== planetId) }
+        : system
+    )
+    saveSystems(updated)
+    return updated
+  })
+}
+
+export function addDebrisBelt(systemId: string, belt: DebrisBelt): void {
+  systems.update((s) => {
+    const updated = s.map((system) =>
+      system.id === systemId
+        ? { ...system, debrisBelts: [...(system.debrisBelts || []), belt] }
+        : system
+    )
+    saveSystems(updated)
+    return updated
+  })
+}
+
+export function updateDebrisBelt(systemId: string, beltId: string, updates: Partial<DebrisBelt>): void {
+  systems.update((s) => {
+    const updated = s.map((system) =>
+      system.id === systemId
+        ? {
+            ...system,
+            debrisBelts: (system.debrisBelts || []).map((belt) =>
+              belt.id === beltId ? { ...belt, ...updates } : belt
+            ),
+          }
+        : system
+    )
+    saveSystems(updated)
+    return updated
+  })
+}
+
+export function deleteDebrisBelt(systemId: string, beltId: string): void {
+  systems.update((s) => {
+    const updated = s.map((system) =>
+      system.id === systemId
+        ? { ...system, debrisBelts: (system.debrisBelts || []).filter((b) => b.id !== beltId) }
         : system
     )
     saveSystems(updated)

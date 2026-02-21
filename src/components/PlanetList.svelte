@@ -26,6 +26,9 @@
   let showGravityMs2 = false
   let showOrbitalPeriodLocalDays = false
 
+  // Sort planets by semi-major axis for orbital ordering
+  $: sortedPlanets = [...planets].sort((a, b) => (a.semiMajorAxis || 0) - (b.semiMajorAxis || 0))
+
   let expandedPlanets: { [key: string]: boolean } = {}
   let editingPlanets: { [key: string]: boolean } = {}
   let editValues: { [key: string]: Partial<Planet> } = {}
@@ -55,7 +58,12 @@
           type: planet.type,
           rotationPeriodHours: planet.rotationPeriodHours,
           inclination: planet.inclination,
-          axialTilt: planet.axialTilt
+          axialTilt: planet.axialTilt,
+          albedo: planet.albedo,
+          atmosphericPressure: planet.atmosphericPressure,
+          oxygenPercentage: planet.oxygenPercentage,
+          argonPercentage: planet.argonPercentage,
+          co2Percentage: planet.co2Percentage
         }
       }
     }
@@ -65,6 +73,19 @@
   function handleSaveEdit(planetId: string, currentPlanet: Planet) {
     if (editValues[planetId]) {
       const updates = editValues[planetId]
+      
+      // Validate atmospheric composition
+      const otherGasesTotal = (updates.oxygenPercentage ?? currentPlanet.oxygenPercentage ?? 0) + 
+                               (updates.argonPercentage ?? currentPlanet.argonPercentage ?? 0) + 
+                               (updates.co2Percentage ?? currentPlanet.co2Percentage ?? 0)
+      if (otherGasesTotal > 100) {
+        alert('Oxygen + Argon + CO2 cannot exceed 100%. Current total: ' + otherGasesTotal.toFixed(2) + '%')
+        return
+      }
+      
+      // Calculate nitrogen as remainder
+      const calculatedNitrogen = 100 - otherGasesTotal
+      updates.nitrogenPercentage = parseFloat(calculatedNitrogen.toFixed(2))
       
       // Recalculate properties if mass or type changed
       if (updates.mass || updates.type) {
@@ -115,7 +136,7 @@
     <p class="empty-state">No planets in this system yet</p>
   {:else}
     <div class="planets-list">
-      {#each planets as planet (planet.id)}
+      {#each sortedPlanets as planet (planet.id)}
         <div class="planet-card">
           <div class="planet-header">
             <button
@@ -132,6 +153,7 @@
             <div class="planet-title">
               <strong>{planet.name}</strong>
               <span class="planet-mass">{planet.mass.toFixed(2)} M⊕</span>
+              <span class="planet-axis">{planet.semiMajorAxis?.toFixed(3) || 'N/A'} AU</span>
             </div>
             <button
               class="edit-btn"
@@ -240,6 +262,70 @@
                       bind:value={editValues[planet.id].axialTilt}
                     />
                   </div>
+                  <div class="form-group">
+                    <label for="albedo-{planet.id}">Albedo</label>
+                    <input
+                      id="albedo-{planet.id}"
+                      type="number"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      bind:value={editValues[planet.id].albedo}
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="atm-pressure-{planet.id}">Atmospheric Pressure (bar)</label>
+                    <input
+                      id="atm-pressure-{planet.id}"
+                      type="number"
+                      min="0"
+                      max="1000"
+                      step="0.01"
+                      bind:value={editValues[planet.id].atmosphericPressure}
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="o2-{planet.id}">Oxygen (%)</label>
+                    <input
+                      id="o2-{planet.id}"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      bind:value={editValues[planet.id].oxygenPercentage}
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="n2-{planet.id}">Nitrogen (%) - Calculated</label>
+                    <input
+                      id="n2-{planet.id}"
+                      type="number"
+                      readonly
+                      value={100 - ((editValues[planet.id].oxygenPercentage ?? 0) + (editValues[planet.id].argonPercentage ?? 0) + (editValues[planet.id].co2Percentage ?? 0))}
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="ar-{planet.id}">Argon (%)</label>
+                    <input
+                      id="ar-{planet.id}"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      bind:value={editValues[planet.id].argonPercentage}
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="co2-{planet.id}">Carbon Dioxide (%)</label>
+                    <input
+                      id="co2-{planet.id}"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      bind:value={editValues[planet.id].co2Percentage}
+                    />
+                  </div>
                   <div class="button-group">
                     <button class="btn-save" on:click={() => handleSaveEdit(planet.id, planet)}>
                       Save Changes
@@ -346,6 +432,23 @@
                     {:else}
                       N/A
                     {/if}
+                  </span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Albedo</span>
+                  <span class="value">{planet.albedo?.toFixed(3) || 'N/A'}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Atmospheric Pressure</span>
+                  <span class="value">{planet.atmosphericPressure?.toFixed(2) || 'N/A'} bar</span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Atmospheric Composition</span>
+                  <span class="value">
+                    O₂ {planet.oxygenPercentage?.toFixed(2) || 'N/A'}% | 
+                    N₂ {planet.nitrogenPercentage?.toFixed(2) || 'N/A'}% | 
+                    Ar {planet.argonPercentage?.toFixed(2) || 'N/A'}% | 
+                    CO₂ {planet.co2Percentage?.toFixed(2) || 'N/A'}%
                   </span>
                 </div>
               {/if}
@@ -462,6 +565,12 @@
   }
 
   .planet-mass {
+    color: #a0a0a0;
+    font-size: 0.9rem;
+    font-weight: normal;
+  }
+
+  .planet-axis {
     color: #a0a0a0;
     font-size: 0.9rem;
     font-weight: normal;

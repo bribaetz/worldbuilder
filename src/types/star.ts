@@ -32,6 +32,23 @@ export interface Planet {
   rotationPeriodHours?: number // Day length in hours
   inclination?: number // Orbital inclination in degrees
   axialTilt?: number // Axial tilt in degrees
+  albedo?: number // Surface albedo (0-1)
+  atmosphericPressure?: number // Pressure in bars
+  oxygenPercentage?: number // O2 percentage (0-100)
+  nitrogenPercentage?: number // N2 percentage (0-100)
+  argonPercentage?: number // Ar percentage (0-100)
+  co2Percentage?: number // CO2 percentage (0-100)
+  createdAt: number
+}
+
+export interface DebrisBelt {
+  id: string
+  starId: string
+  name: string
+  type: 'rock' | 'ice' // Debris belt composition
+  innerAU: number // Inner radius in AU
+  outerAU: number // Outer radius in AU
+  age: number // Years (default: 0)
   createdAt: number
 }
 
@@ -40,5 +57,6 @@ export interface System {
   name: string
   star: Star
   planets: Planet[]
+  debrisBelts?: DebrisBelt[]
   createdAt: number
 }

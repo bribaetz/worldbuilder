@@ -23,6 +23,7 @@
   import SystemCard from '$components/SystemCard.svelte'
   import PlanetForm from '$components/PlanetForm.svelte'
   import PlanetList from '$components/PlanetList.svelte'
+  import DebrisBeltList from '$components/DebrisBeltList.svelte'
   import BodesLawCalculator from '$components/BodesLawCalculator.svelte'
   import type { System } from './types/star'
 
@@ -278,6 +279,7 @@
               <h2>Planets</h2>
               <PlanetForm systemId={selectedSystem.id} habitableZoneMin={selectedSystem.star.habitableZoneMin || 0} habitableZoneMax={selectedSystem.star.habitableZoneMax || 0} />
               <PlanetList systemId={selectedSystem.id} planets={selectedSystem.planets} starMass={selectedSystem.star.mass} habitableZoneMin={selectedSystem.star.habitableZoneMin || 0} habitableZoneMax={selectedSystem.star.habitableZoneMax || 0} />
+              <DebrisBeltList systemId={selectedSystem.id} debrisBelts={selectedSystem.debrisBelts || []} />
               <BodesLawCalculator starMass={selectedSystem.star.mass} />
             </div>
           </div>
