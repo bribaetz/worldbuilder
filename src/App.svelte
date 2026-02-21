@@ -16,7 +16,8 @@
     getStarColor,
     formatAge,
     isInMainSequence,
-    getStellarStage
+    getStellarStage,
+    calculateStarAbsoluteMagnitude
   } from '$lib/utils/astronomy'
   import { parseAgeInput } from '$lib/utils/helpers'
   import StarCalculator from '$components/StarCalculator.svelte'
@@ -25,6 +26,7 @@
   import PlanetList from '$components/PlanetList.svelte'
   import DebrisBeltList from '$components/DebrisBeltList.svelte'
   import BodesLawCalculator from '$components/BodesLawCalculator.svelte'
+  import SystemVisualization from '$components/SystemVisualization.svelte'
   import type { System } from './types/star'
 
   let selectedSystemId: string | null = null
@@ -34,6 +36,8 @@
   let editAgeInput = ''
   let showRadiusKm = false
   let showDensityGcm3 = false
+  let showPlanetForm = false
+  let showStarApparentSizeInDegrees = true
 
   $: selectedSystem = selectedSystemId
     ? $systems.find((s) => s.id === selectedSystemId) || null
@@ -49,12 +53,14 @@
     editAgeInput = formatAge(system.star.age || 0)
     viewMode = 'view'
     editMode = false
+    showPlanetForm = false
   }
 
   function handleBackToList() {
     selectedSystemId = null
     viewMode = 'create'
     editMode = false
+    showPlanetForm = false
   }
 
   function toggleEditMode() {
@@ -153,6 +159,8 @@
                 <p class="temperature-label">{selectedSystem.star.temperature || 'N/A'} K</p>
               </div>
             </div>
+
+            <SystemVisualization system={selectedSystem} />
 
             {#if editMode}
               <div class="edit-section">
@@ -273,12 +281,23 @@
                     .star.habitableZoneMax?.toFixed(3) || 'N/A'} AU</span
                 >
               </div>
+              <div class="detail-item">
+                <span class="label">Absolute Magnitude</span>
+                <span class="value">{calculateStarAbsoluteMagnitude(selectedSystem.star.luminosity || 0).toFixed(2)}</span>
+              </div>
             </div>
 
             <div class="planets-section">
-              <h2>Planets</h2>
-              <PlanetForm systemId={selectedSystem.id} habitableZoneMin={selectedSystem.star.habitableZoneMin || 0} habitableZoneMax={selectedSystem.star.habitableZoneMax || 0} />
-              <PlanetList systemId={selectedSystem.id} planets={selectedSystem.planets} starMass={selectedSystem.star.mass} habitableZoneMin={selectedSystem.star.habitableZoneMin || 0} habitableZoneMax={selectedSystem.star.habitableZoneMax || 0} />
+              <div class="planets-header">
+                <h2>Planets</h2>
+                <button class="btn-add-planet" on:click={() => (showPlanetForm = !showPlanetForm)}>
+                  {showPlanetForm ? 'Hide' : 'Add'} New Planet
+                </button>
+              </div>
+              {#if showPlanetForm}
+                <PlanetForm systemId={selectedSystem.id} habitableZoneMin={selectedSystem.star.habitableZoneMin || 0} habitableZoneMax={selectedSystem.star.habitableZoneMax || 0} />
+              {/if}
+              <PlanetList systemId={selectedSystem.id} planets={selectedSystem.planets} luminosity={selectedSystem.star.luminosity || 0} starMass={selectedSystem.star.mass} starRadius={selectedSystem.star.radius || 1.0} habitableZoneMin={selectedSystem.star.habitableZoneMin || 0} habitableZoneMax={selectedSystem.star.habitableZoneMax || 0} showStarApparentSizeInDegrees={showStarApparentSizeInDegrees} />
               <DebrisBeltList systemId={selectedSystem.id} debrisBelts={selectedSystem.debrisBelts || []} />
               <BodesLawCalculator starMass={selectedSystem.star.mass} />
             </div>
@@ -606,10 +625,41 @@
     border-top: 1px solid rgba(97, 218, 251, 0.2);
   }
 
-  .planets-section h2 {
+  .planets-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+
+  .planets-header h2 {
     color: #61dafb;
     font-size: 1.3rem;
-    margin: 0 0 20px 0;
+    margin: 0;
+  }
+
+  .btn-add-planet {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #61dafb 0%, #4da8c0 100%);
+    border: none;
+    border-radius: 6px;
+    color: #0a1a2e;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+
+  .btn-add-planet:hover {
+    background: linear-gradient(135deg, #4da8c0 0%, #3a7a8e 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(97, 218, 251, 0.3);
+  }
+
+  .btn-add-planet:active {
+    transform: translateY(0);
   }
 
   @media (max-width: 1024px) {

@@ -499,6 +499,50 @@ export function calculatePlanetRadius(mass: number, type: 'rock' | 'ice' | 'gas'
   }
 }
 
+
+export function planetAverageTemperature(
+  starLuminosity: number,
+  semiMajorAxis: number,
+  albedo: number = 0.3,
+  greenhouseEffect: number = 1.0
+): number {
+  const stefanBoltzmanConstant = 0.000056703
+  const starDistanceCm = 14960000000000 * semiMajorAxis //  AU in cm
+  const luminosityErgsPerSec = starLuminosity * 3.846e33 // Convert solar luminosity to erg/s
+  const tGreenhouse = greenhouseEffect * .5841
+  const calcX = Math.sqrt((1-albedo) * luminosityErgsPerSec / (16 * Math.PI * stefanBoltzmanConstant))
+  const teff = Math.sqrt(calcX) * (1/Math.sqrt(starDistanceCm))
+  const teq = Math.pow(teff, 4) * (1 +(3*tGreenhouse/4))
+  const tsur = teq/.9
+  const tKelvin = Math.sqrt(Math.sqrt(tsur))
+  const tempCelsius = tKelvin
+  if (semiMajorAxis <= 0) return 0
+  else{    
+    return tempCelsius-273.15
+  }
+}
+
+export function planetAtmosphereCells(
+  dayLengthHours: number,
+)
+{
+  if (dayLengthHours <= 0) return 0
+  else if(dayLengthHours >=48) return 1
+  else if(dayLengthHours >=6 && dayLengthHours < 48) return 3
+  else if(dayLengthHours >=3 && dayLengthHours <6) return 7
+  else if(dayLengthHours > 0 && dayLengthHours <3) return 5
+  else return 0
+}
+
+export function cellLocations(cellCount: number, atmosphericPressure: number)
+{
+  if (atmosphericPressure <= 0) return "No atmosphere"
+  else if (cellCount == 3)return "0-30° N/S, 30-60° N/S, 60-90° N/S"
+  else if (cellCount == 5)return "0-23° N/S, 23-30° N/S, 30-47° N/S, 47-56° N/S, 56-90° N/S"
+  else if (cellCount == 7)return "0-24° N/S, 24-27° N/S, 27-31° N/S, 31-41° N/S, 41-58° N/S, 58-71° N/S, 71-90° N/S"
+  else if (cellCount == 1)return "0-90° N/S"
+}
+
 /**
  * Calculate planet density from mass and radius
  * Returns density in g/cm³
@@ -659,4 +703,105 @@ export function isHabitable(
 
   return true
 }
+
+// Moon calculations
+export function calculateMoonRadius(mass: number, type: 'rock' | 'ice'): number {
+  // Use power law: R = c * M^(1/3)
+  // Calibrated to match the Moon: M=0.0123 Earth masses, R=0.2726 Earth radii
+  // Rock: R = 1.18 * M^(1/3)
+  // Ice: R = 1.45 * M^(1/3) (less dense, slightly larger for same mass)
+  const coefficient = type === 'ice' ? 1.45 : 1.18
+  return coefficient * Math.pow(mass, 1 / 3)
+}
+
+export function calculateMoonDensity(mass: number, radius: number, type: 'rock' | 'ice'): number {
+  // Volume in Earth volumes (since radius is in Earth radii)
+  // Volume ratio = (r_moon / r_earth)³ = r_moon³ (when r is in Earth radii)
+  const volumeInEarthVolumes = radius ** 3
+  
+  // Density in Earth density units
+  const densityInEarthDensities = mass / volumeInEarthVolumes
+  
+  // Convert to g/cm³ (Earth's density is 5.51 g/cm³)
+  const densityGcm3 = densityInEarthDensities * 5.51
+  
+  // Type-based adjustment for composition
+  // Rock moons are ~3.34 g/cm³ (like our Moon), ice moons are less
+  const typeMultiplier = type === 'ice' ? 0.65 : 1.0
+  
+  return densityGcm3 * typeMultiplier
+}
+
+export function calculateMoonOrbitalPeriod(semiMajorAxisKm: number, primaryMass: number): number {
+  // Kepler's third law: P² = (4π²/GM) × a³
+  // Convert to AU and solar masses for standard form
+  const aAU = semiMajorAxisKm / 149597870.7 // Convert km to AU
+  const massInSolarMasses = primaryMass / 333000 // Convert Earth masses to solar masses (1 Earth = 1/333000 solar masses)
+  const periodYears = Math.sqrt(aAU ** 3 / massInSolarMasses)
+  return periodYears * 365.25 // Convert to days
+}
+
+export function calculateMoonApoapsis(semiMajorAxisKm: number, eccentricity: number): number {
+  return semiMajorAxisKm * (1 + eccentricity)
+}
+
+export function calculateMoonPeriapsis(semiMajorAxisKm: number, eccentricity: number): number {
+  return semiMajorAxisKm * (1 - eccentricity)
+}
+
+/**
+ * Calculate apparent angular size of a star as seen from a planet
+ * Returns angular diameter in degrees
+ */
+export function calculateStarApparentSize(starRadiusSolar: number, distanceAU: number): number {
+  if (distanceAU <= 0) return 0
+  // Angular diameter = 2 * arctan(R / distance)
+  // Convert star radius from solar radii to AU (1 AU = 215 solar radii)
+  const starRadiusAU = starRadiusSolar / 215.03
+  const angleRadians = 2 * Math.atan(starRadiusAU / distanceAU)
+  return (angleRadians * 180) / Math.PI // Convert to degrees
+}
+
+/**
+ * Calculate absolute magnitude of a star from its luminosity
+ * Using: M = 4.81013 - 2.5 * log10(L)
+ */
+export function calculateStarAbsoluteMagnitude(luminosity: number): number {
+  if (luminosity <= 0) return 0
+  return 4.81013 - 2.5 * Math.log10(luminosity)
+}
+
+/**
+ * Calculate apparent magnitude of a star as seen from a planet
+ * Using distance modulus: m = M + 5*log10(d) - 5
+ * where d is distance in parsecs (1 parsec = 206,264.806 AU)
+ */
+export function calculateStarApparentMagnitude(absoluteMagnitude: number, distanceAU: number): number {
+  if (distanceAU <= 0) return 0
+  const distanceParsecs = distanceAU / 206264.806
+  return absoluteMagnitude + 5 * Math.log10(distanceParsecs) - 5
+}
+
+/**
+ * Calculate star brightness as perceived from a planet (in lux or relative units)
+ * Using: brightness = 2.512^(-26.762 - apparentMagnitude)
+ * Returns relative brightness where Earth/Sun = 1.0
+ */
+export function calculateStarBrightnessFromPlanet(apparentMagnitude: number): number {
+  return Math.pow(2.512, -26.762 - apparentMagnitude)
+}
+
+/**
+ * Calculate apparent angular size of a moon as seen from the planet's surface
+ * Returns angular diameter in degrees
+ */
+export function calculateMoonApparentSize(moonRadiusEarth: number, distanceKm: number): number {
+  if (distanceKm <= 0) return 0
+  // Convert moon radius from Earth radii to km
+  const moonRadiusKm = moonRadiusEarth * EARTH_RADIUS_KM
+  // Angular diameter = 2 * arctan(R / distance)
+  const angleRadians = 2 * Math.atan(moonRadiusKm / distanceKm)
+  return (angleRadians * 180) / Math.PI // Convert to degrees
+}
+
 

@@ -29,6 +29,7 @@
   let oxygenPercentage = 21
   let argonPercentage = 0.9
   let co2Percentage = 0.04
+  let greenhouseEffect = 1.0
 
   let surfaceGravity = 0
 
@@ -97,6 +98,7 @@
       nitrogenPercentage,
       argonPercentage,
       co2Percentage,
+      greenhouseEffect,
       createdAt: Date.now()
     }
 
@@ -116,6 +118,7 @@
     oxygenPercentage = 21
     argonPercentage = 0.9
     co2Percentage = 0.04
+    greenhouseEffect = 1.0
   }
 
   function handleCancel() {
@@ -134,6 +137,7 @@
     oxygenPercentage = 21
     argonPercentage = 0.9
     co2Percentage = 0.04
+    greenhouseEffect = 1.0
   }
 </script>
 
@@ -333,7 +337,17 @@
       bind:value={co2Percentage}
     />
   </div>
-
+  <div class="form-group">
+    <label for="greenhouseEffect">Greenhouse Effect (0-1.0)</label>
+    <input
+      id="greenhouseEffect"
+      type="number"
+      min="0"
+      max="1.0"
+      step="0.01"
+      bind:value={greenhouseEffect}
+    />
+  </div>
   <div class="button-group">
     <button class="btn-save" on:click={handleSave}>Add Planet</button>
     <button class="btn-cancel" on:click={handleCancel}>Cancel</button>

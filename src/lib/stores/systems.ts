@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store'
-import type { System, Star, Planet, DebrisBelt } from '$lib/../types/star'
+import type { System, Star, Planet, DebrisBelt, Moon } from '$lib/../types/star'
 
 export const systems = writable<System[]>([])
 
@@ -121,6 +121,69 @@ export function deleteDebrisBelt(systemId: string, beltId: string): void {
     const updated = s.map((system) =>
       system.id === systemId
         ? { ...system, debrisBelts: (system.debrisBelts || []).filter((b) => b.id !== beltId) }
+        : system
+    )
+    saveSystems(updated)
+    return updated
+  })
+}
+
+// Moon operations
+export function addMoon(systemId: string, planetId: string, moon: Moon): void {
+  systems.update((s) => {
+    const updated = s.map((system) =>
+      system.id === systemId
+        ? {
+            ...system,
+            planets: system.planets.map((p) =>
+              p.id === planetId
+                ? { ...p, moons: [...(p.moons || []), moon] }
+                : p
+            )
+          }
+        : system
+    )
+    saveSystems(updated)
+    return updated
+  })
+}
+
+export function updateMoon(systemId: string, planetId: string, moonId: string, updates: Partial<Moon>): void {
+  systems.update((s) => {
+    const updated = s.map((system) =>
+      system.id === systemId
+        ? {
+            ...system,
+            planets: system.planets.map((p) =>
+              p.id === planetId
+                ? {
+                    ...p,
+                    moons: (p.moons || []).map((m) =>
+                      m.id === moonId ? { ...m, ...updates } : m
+                    )
+                  }
+                : p
+            )
+          }
+        : system
+    )
+    saveSystems(updated)
+    return updated
+  })
+}
+
+export function deleteMoon(systemId: string, planetId: string, moonId: string): void {
+  systems.update((s) => {
+    const updated = s.map((system) =>
+      system.id === systemId
+        ? {
+            ...system,
+            planets: system.planets.map((p) =>
+              p.id === planetId
+                ? { ...p, moons: (p.moons || []).filter((m) => m.id !== moonId) }
+                : p
+            )
+          }
         : system
     )
     saveSystems(updated)

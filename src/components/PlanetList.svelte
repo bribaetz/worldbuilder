@@ -12,16 +12,25 @@
     calculatePeriapsis,
     calculateApoapsis,
     calculateOrbitalPeriodDays,
-    isHabitable
+    isHabitable,
+    planetAverageTemperature,
+    planetAtmosphereCells,
+    cellLocations,
+    calculateStarApparentSize,
+    calculateStarAbsoluteMagnitude,
+    calculateStarApparentMagnitude,
+    calculateStarBrightnessFromPlanet
   } from '$lib/utils/astronomy'
+  import MoonList from './MoonList.svelte'
   import type { Planet } from '../types/star'
-
   export let systemId: string
   export let planets: Planet[]
   export let starMass: number
   export let habitableZoneMin: number = 0
   export let habitableZoneMax: number = 0
-
+  export let luminosity: number
+  export let starRadius: number = 1.0
+  export let showStarApparentSizeInDegrees: boolean = true
   let showRadiusKm = false
   let showGravityMs2 = false
   let showOrbitalPeriodLocalDays = false
@@ -63,7 +72,8 @@
           atmosphericPressure: planet.atmosphericPressure,
           oxygenPercentage: planet.oxygenPercentage,
           argonPercentage: planet.argonPercentage,
-          co2Percentage: planet.co2Percentage
+          co2Percentage: planet.co2Percentage,
+          greenhouseEffect: planet.greenhouseEffect
         }
       }
     }
@@ -120,6 +130,9 @@
   <div class="planets-header-row">
     <h3>Planets ({planets.length})</h3>
     <div class="planet-controls">
+      <button class="unit-toggle" on:click={() => (showStarApparentSizeInDegrees = !showStarApparentSizeInDegrees)}>
+        {showStarApparentSizeInDegrees ? 'Star Size: degrees' : 'Star Size: Moon multiples'}
+      </button>
       <button class="unit-toggle" on:click={() => (showRadiusKm = !showRadiusKm)}>
         {showRadiusKm ? 'Radius: km' : 'Radius: R⊕'}
       </button>
@@ -324,6 +337,17 @@
                       max="100"
                       step="0.01"
                       bind:value={editValues[planet.id].co2Percentage}
+                    />  
+                  </div>
+                  <div class="form-group">
+                    <label for="greenhouseEffect-{planet.id}">Greenhouse Effect (0-1.0)</label>
+                    <input
+                      id="greenhouseEffect-{planet.id}"
+                      type="number"
+                      min="0"
+                      max="1.0"
+                      step="0.01"
+                      bind:value={editValues[planet.id].greenhouseEffect}
                     />
                   </div>
                   <div class="button-group">
@@ -341,6 +365,24 @@
                   <span class="value type-badge" class:rock={planet.type === 'rock'} class:ice={planet.type === 'ice'} class:gas={planet.type === 'gas'}>
                     {(planet.type || 'rock').charAt(0).toUpperCase() + (planet.type || 'rock').slice(1)}
                   </span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Host Star Apparent Size</span>
+                  <span class="value">
+                    {#if showStarApparentSizeInDegrees}
+                      {calculateStarApparentSize(starRadius, planet.semiMajorAxis).toFixed(4)}°
+                    {:else}
+                      {(calculateStarApparentSize(starRadius, planet.semiMajorAxis) / 0.5186).toFixed(4)}× Moon
+                    {/if}
+                  </span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Star Apparent Magnitude</span>
+                  <span class="value">{calculateStarApparentMagnitude(calculateStarAbsoluteMagnitude(luminosity), planet.semiMajorAxis).toFixed(2)}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Star Brightness (relative to Earth)</span>
+                  <span class="value">{calculateStarBrightnessFromPlanet(calculateStarApparentMagnitude(calculateStarAbsoluteMagnitude(luminosity), planet.semiMajorAxis)).toFixed(4)}</span>
                 </div>
                 {#if planet.type === 'rock'}
                   <div class="detail-row">
@@ -443,14 +485,38 @@
                   <span class="value">{planet.atmosphericPressure?.toFixed(2) || 'N/A'} bar</span>
                 </div>
                 <div class="detail-row">
+                  <span class="label">Average Temperature</span>
+                  <span class="value">{planetAverageTemperature(luminosity,planet.semiMajorAxis, planet.albedo, planet.greenhouseEffect)?.toFixed(2) || 'N/A'}°C</span>
+                </div>
+                <div class="detail-row">
                   <span class="label">Atmospheric Composition</span>
                   <span class="value">
                     O₂ {planet.oxygenPercentage?.toFixed(2) || 'N/A'}% | 
                     N₂ {planet.nitrogenPercentage?.toFixed(2) || 'N/A'}% | 
                     Ar {planet.argonPercentage?.toFixed(2) || 'N/A'}% | 
-                    CO₂ {planet.co2Percentage?.toFixed(2) || 'N/A'}%
+                    CO₂ {planet.co2Percentage?.toFixed(2) || 'N/A'}% |
+                    Greenhouse Effect {planet.greenhouseEffect?.toFixed(2) || 'N/A'}
                   </span>
                 </div>
+                <div class="detail-row">
+                <span class="label">Partial Pressures</span>
+                <span class="value">
+                  O₂ {(planet.atmosphericPressure && planet.oxygenPercentage) ? (planet.atmosphericPressure * (planet.oxygenPercentage / 100)).toFixed(4) + ' bar' : 'N/A'} | 
+                  N₂ {(planet.atmosphericPressure && planet.nitrogenPercentage) ? (planet.atmosphericPressure * (planet.nitrogenPercentage / 100)).toFixed(4) + ' bar' : 'N/A'} | 
+                  Ar {(planet.atmosphericPressure && planet.argonPercentage) ? (planet.atmosphericPressure * (planet.argonPercentage / 100)).toFixed(4) + ' bar' : 'N/A'} | 
+                  CO₂ {(planet.atmosphericPressure && planet.co2Percentage) ? (planet.atmosphericPressure * (planet.co2Percentage / 100)).toFixed(4) + ' bar' : 'N/A'}
+                </span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Number Atmospheric Cells</span>
+                  <span class="value">{planetAtmosphereCells(planet.rotationPeriodHours) || 'N/A |'}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="label">Atmospheric Cell Locations</span>
+                  <span class="value">{cellLocations(planetAtmosphereCells(planet.rotationPeriodHours), planet.atmosphericPressure) || 'N/A'}</span>
+                </div>
+
+                <MoonList {systemId} planetId={planet.id} planetMass={planet.mass} moons={planet.moons || []} />
               {/if}
             </div>
           {/if}

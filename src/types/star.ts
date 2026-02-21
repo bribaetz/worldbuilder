@@ -38,6 +38,26 @@ export interface Planet {
   nitrogenPercentage?: number // N2 percentage (0-100)
   argonPercentage?: number // Ar percentage (0-100)
   co2Percentage?: number // CO2 percentage (0-100)
+  greenhouseEffect?: number // Greenhouse effect strength (0-100)
+  surfaceTemperature?: number // Average surface temperature in Celsius
+  moons?: Moon[] // Array of moons
+  createdAt: number
+}
+export interface Moon {
+  id: string
+  planetId: string
+  name: string
+  mass: number // Earth masses
+  type: 'rock' | 'ice'
+  radius?: number // Earth radii
+  density?: number // g/cm³
+  semiMajorAxisKm: number // Semi-major axis in km
+  eccentricity: number
+  atmosphericPressure: number // Pressure in bars (0+)
+  orbitalPeriodDays?: number // Orbital period in days
+  rotationPeriodHours?: number // Rotation period in hours
+  apoapsis?: number // Apoapsis in km
+  periapsis?: number // Periapsis in km
   createdAt: number
 }
 
